@@ -21,11 +21,13 @@ class ProductMercadoLivreObservable
      */
     private $repository;
 
-    public function __construct(ProductMercadoLivreRepository $repository)
+    public function __construct(ProductMercadoLivreRepository $repository, \Swift_Mailer $mailer, \Twig_Environment $templating)
     {
 
         $this->repository = $repository;
         $this->dom = new Dom();
+		$this->mailer = $mailer;
+		$this->templating = $templating;
     }
 
     public function verify()
@@ -42,7 +44,7 @@ class ProductMercadoLivreObservable
 
             if ($price < $product->getPrice()) {
 
-                //@ToDo Implementar Notificação por email
+				$this->notification($product->getUser(), $product->getTitle());
                 $totalNotification++;
             }
 
@@ -61,7 +63,24 @@ class ProductMercadoLivreObservable
             'totalNotification' => $totalNotification
         ];
 
-    }
+	}
+
+	protected function notification($email, $product)
+	{
+		$message = (new \Swift_Message('Notification product'))
+        ->setFrom($email)
+        ->setTo($email)
+        ->setBody(
+            $this->templating->render(
+                'email.html.twig',
+                array('name' => $product)
+            ),
+            'text/html'
+        );
+
+		$this->mailer->send($message);
+
+	}
 
     protected function handlerPrice($dom)
     {
