@@ -1,0 +1,37 @@
+version: '3'
+services:
+    baixou-eu-aviso-php:
+        build:
+            context: .
+            dockerfile: ./devops/php-fpm/Dockerfile
+        environment:
+            XDEBUG_CONFIG: "remote_host=docker.for.mac.localhost"
+            PHP_IDE_CONFIG: "serverName=Docker"
+        container_name: baixou-eu-aviso-php
+        volumes:
+            - ./app:/var/www/baixou-eu-aviso
+            - ./devops/php-fpm/php.ini:/usr/local/etc/php/conf.d/php.ini
+        working_dir: /var/www/baixou-eu-aviso
+    baixou-eu-aviso-web:
+        container_name: baixou-eu-aviso-web
+        image: nginx:latest
+        links:
+            - baixou-eu-aviso-php
+        ports:
+            - "84:80"
+        volumes:
+            - ./app:/var/www/baixou-eu-aviso
+            - ./devops/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    baixou-eu-aviso-mongodb-database:
+        image: mongo:latest
+        container_name: "baixou-eu-aviso-mongodb-database"
+        environment:
+            - MONGO_DATA_DIR=/data/db
+            - MONGO_LOG_DIR=/dev/null
+            - MONGODB_USER="user"
+            - MONGODB_PASS="pass"
+        volumes:
+            - ./Infra/data/db:/data/db
+        ports:
+            - 27017:27017
+        command: mongod --smallfiles --logpath=/dev/null # --quiet
